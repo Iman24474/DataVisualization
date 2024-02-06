@@ -1,0 +1,84 @@
+---
+title: "DataVisualization"
+output: html_document
+date: "2024-02-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(gapminder)
+```
+
+# A Gapminder Plot
+
+#### 1. The basic plot can be created with ggplot and aesthetic mappings:
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007)
+ggplot(gm2007) +
+  geom_point(aes(x = gdpPercap,
+                 y = lifeExp,
+                 size = pop,
+                 color = continent)) +
+  scale_x_log10() +
+  ylim(c(20, 85))
+```
+
+#### 2. With some adjustments the basic plot can be brought close to the Gapminder version in appearance:
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007) |>
+  arrange(desc(pop)) ## Sort to avoid over-plotting
+ggplot(gm2007) +
+  geom_point(aes(x = gdpPercap,
+                 y = lifeExp,
+                 size = pop,
+                 fill = continent),
+             shape = 21) + ## to allow the using 'fill' aesthetic
+  scale_x_log10() +
+  ylim(c(20, 85)) +
+  scale_size_area(max_size = 20,
+                  labels = waiver() ,
+                  breaks = c(0.25 * 10 ^ 9, 0.5 * 10 ^ 9, 10 ^ 9)) +
+  scale_fill_manual(values = c(Africa = "deepskyblue",
+                               Asia = "red",
+                               Americas = "green",
+                               Europe = "gold",
+                               Oceania = "brown")) +
+  labs(x = "Income" , y = "Life Expectancy") +
+  theme(text = element_text(size = 16)) +
+  guides(fill = guide_legend(title = "Continent",
+                             override.aes = list(size = 5), order = 1),
+         size = guide_legend(title = "Population",
+                             label.hjust = 1,
+                             order = 2)) + 
+  theme_minimal() + 
+  theme(panel.border = element_rect(fill = NA, color = "grey20"))
+
+
+```
+
+#### 3. To judge the marginal association between life expectancy and population size we can change the channel mapping:
+
+-   map the horizontal axis to population;
+-   map area to income.
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007)
+ggplot(gm2007) +
+  geom_point(aes(x = pop,
+                 y = lifeExp,
+                 size = gdpPercap)) +
+  scale_x_log10() +
+  ylim(c(20, 85)) +
+  theme_minimal() +
+  theme(panel.border = element_rect(fill = NA,
+                                    color = "grey20"))
+
+```
