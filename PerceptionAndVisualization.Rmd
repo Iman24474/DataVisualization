@@ -15,6 +15,7 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(gapminder)
+library(patchwork)
 ```
 
 # A Gapminder Plot
@@ -84,3 +85,93 @@ ggplot(gm2007) +
                                     color = "grey20"))
 
 ```
+#### 4. Similar Plots with Different Variables and Shared Encodings 
+One way to show three continuous variables is with two plots that share an axis:
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007)
+pe_thm <- theme_minimal() +
+  theme(panel.background = element_rect(color = "black",
+                                        linewidth = 0.5,
+                                        fill = NA))
+p1 <- ggplot(gm2007, aes(x = gdpPercap, 
+                         y = lifeExp, 
+                         color = continent)) +
+  geom_point() +
+  scale_x_log10() +
+  guides(color = "none") +
+  pe_thm
+
+p2 <- ggplot(gm2007, aes(x = pop / 10^6,
+                         y = lifeExp,
+                         color = continent)) +
+  geom_point() + 
+  scale_x_log10() +
+  pe_thm +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+p1 + p2
+
+
+```
+
+#### 5. Different Plots with Shared Encodings
+Multiple views of the data are often helpful.
+
+Sharing encodings makes the relations between views easier to perceive.
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007)
+
+p3 <- ggplot(gm2007, aes(x = pop / 10 ^ 6,
+                         y = reorder(continent, pop, FUN = sum),
+                         fill = continent)) +
+  geom_col() +
+  ylab(NULL) +
+  pe_thm
+
+p1 + p3
+```
+
+#### 6. Small Multiples
+These plot collections are also called trellis plots, lattice plots, or faceted plots.
+
+A plot of life expectancy against income per capita in 2007 faceted by continent:
+
+```{r}
+gm2007 <- filter(gapminder, year == 2007)
+gd <- filter(gapminder, year %in% c(1977,1987,1997,2007))
+fct_thm <- theme_minimal() +
+  theme(panel.background = element_rect(color = "black",
+                                        linewidth = 0.5,
+                                        fill = NA))
+ggplot(gm2007, aes(x = gdpPercap,
+                   y = lifeExp,
+                   color = continent)) +
+  geom_point(size = 2.5) +
+  scale_x_log10() +
+  facet_wrap(~ continent) +
+  fct_thm
+
+```
+
+A useful variation is to show a muted view of the full data in the background:
+
+```{r}
+ggplot(gm2007, aes(x = gdpPercap, y = lifeExp, color = continent)) +
+    geom_point(data = mutate(gm2007, continent = NULL), color = "grey80") +
+    geom_point(size = 2.5) +
+    scale_x_log10() +
+    facet_wrap(~ continent) +
+    fct_thm
+
+```
+
+
+
+
+
+
+
