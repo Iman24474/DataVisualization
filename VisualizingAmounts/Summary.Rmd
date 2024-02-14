@@ -1,6 +1,8 @@
 ---
 title: "Visualizing Amounts"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
 date: "2024-02-14"
 ---
 
