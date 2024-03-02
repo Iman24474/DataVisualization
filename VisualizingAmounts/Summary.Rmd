@@ -1,5 +1,4 @@
 ---
-r
 title: "Visualizing Amounts"
 output:
   html_document:
