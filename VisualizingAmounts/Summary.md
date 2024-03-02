@@ -4,6 +4,7 @@ output:
   html_document:
     df_print: paged
     keep_md: true
+    r: true
 date: "2024-02-14"
 ---
 
