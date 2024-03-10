@@ -1,0 +1,30 @@
+---
+title: "Exercises"
+output: html_document
+date: "2024-03-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(ggthemes)
+
+```
+
+```{r, echo=FALSE}
+penguins <- palmerpenguins::penguins
+
+```
+
+# 1. Make a scatterplot of `bill_depth_mm` vs. `bill_length_mm`. That is, make a scatterplot with `bill_depth_mm` on the y-axis and `bill_length_mm` on the x-axis. Describe the relationship between these two variables.
+
+```{r, echo=FALSE}
+ggplot(penguins,
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm)) +
+  geom_point()
+
+```
