@@ -1,7 +1,8 @@
 ---
 title: "CH1-5"
-output: html_document
-  df_print: paged
+output:
+  pdf_document: default
+  html_document: default
 date: "2024-03-09"
 ---
 
@@ -217,7 +218,7 @@ ggplot(penguins,
        aes(x = flipper_length_mm,
            y = body_mass_g)) +
   geom_point(aes(color = species, shape = species)) +
-  facet_wrap()
+  facet_wrap(~island)
 ```
 
 
