@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, include=FALSE}
 library(tidyverse)
 library(ggthemes)
+library(nycflights13)
 
 ```
 
@@ -155,6 +156,7 @@ ggplot(penguins,
            y = body_mass_g)) +
   geom_boxplot()
 ```
+
 Alternatively, we can make density plots with `geom_density()`. You can customize the thickness of the lines using the `linewidth` argument in order to make them stand out a bit more against the background.
 
 ```{r, warning=FALSE}
@@ -163,6 +165,7 @@ ggplot(penguins,
            color = species)) +
   geom_density(linewidth = 0.75)
 ```
+
 Additionally, we can map species to both `color` and `fill` aesthetics and use the `alpha` aesthetic to add transparency to the filled density curves. This aesthetic takes values between 0 (completely transparent) and 1 (completely opaque).
 
 ```{r, warning=FALSE}
@@ -175,7 +178,7 @@ ggplot(penguins,
 
 We can use `stacked bar plots` to visualize the relationship between two categorical variables.
 
-The first plot shows the frequencies of each species of penguins on each island. The plot of frequencies shows that there are equal numbers of Adelies on each island. But we don’t have a good sense of the percentage balance within each island.
+The first plot shows the frequencies of each species of penguins on each island. The plot of frequencies shows that there are equal numbers of Adelies on each island. But we don't have a good sense of the percentage balance within each island.
 
 ```{r,warning=FALSE}
 ggplot(penguins,
@@ -183,7 +186,8 @@ ggplot(penguins,
            fill = species)) +
   geom_bar()
 ```
-The second plot, a relative frequency plot created by setting `position = "fill"` in the geom, is more useful for comparing species distributions across islands since it’s not affected by the unequal numbers of penguins across the islands.
+
+The second plot, a relative frequency plot created by setting `position = "fill"` in the geom, is more useful for comparing species distributions across islands since it's not affected by the unequal numbers of penguins across the islands.
 
 Using this plot we can see that Gentoo penguins all live on Biscoe island and make up roughly 75% of the penguins on that island, Chinstrap all live on Dream island and make up roughly 50% of the penguins on that island, and Adelie live on all three islands and make up all of the penguins on Torgersen.
 
@@ -219,7 +223,195 @@ ggplot(penguins,
            y = body_mass_g)) +
   geom_point(aes(color = species, shape = species)) +
   facet_wrap(~island)
+
 ```
+
+# 6. Data Transformation
+
+The primary dplyr verbs (functions) have in common:
+
+1.  The first argument is always a data frame.
+2.  The subsequent arguments typically describe which columns to operate on, using the variable names (without quotes).
+3.  The output is always a new data frame.
+
+Because each verb does one thing well, solving complex problems will usually require combining multiple verbs, and we'll do so with the pipe, `|>`.
+
+The pipe takes the thing on its left and passes it along to the function on its right so that `x |> f(y)` is equivalent to `f(x, y)`, and `x |> f(y) |> g(z)` is equivalent to `g(f(x, y), z)`. The easiest way to pronounce the pipe is "then".
+
+```{r, warning=FALSE, message=FALSE}
+flights |>
+  filter(dest == "IAH") |>
+  group_by(year, month, day) |>
+  summarize(
+    arr_delay = mean(arr_delay, na.rm = TRUE)
+  )
+```
+
+dplyr's verbs are organized into four groups based on what they operate on: *rows*, *columns*, *groups*, or *tables.*
+
+## 6.1. Rows
+
+The most important verbs that operate on rows of a dataset are `filter()`, which changes which rows are present without changing their order, and `arrange()`, which changes the order of the rows without changing which are present. `distinct()` which finds rows with unique values but unlike `arrange()` and `filter()` it can also optionally modify the columns.
+
+### 6.1.1 `filter()`
+`filter()` allows you to keep rows based on the values of the columns. 
+The first argument is the data frame. The second and subsequent arguments are the conditions that must be true to keep the row.
+
+```{r, warning=FALSE}
+flights |>
+  filter(dep_delay > 120)
+
+```
+
+As well as `>` (greater than), you can use `>=` (greater than or equal to), `<` (less than), `<=` (less than or equal to), `==` (equal to), and `!=` (not equal to). You can also combine conditions with` &` or `,` to indicate “and” (check for both conditions) or with `|` to indicate “or” (check for either condition):
+```{r, warning=FALSE}
+# Flights that departed on January 1
+flights |>
+  filter(month == 1 & day == 1)
+
+# Flights that departed in January or February
+flights |>
+  filter(month == 1 | month == 2)
+
+```
+
+There’s a useful shortcut when you’re combining `|` and `==`: `%in%`. It keeps rows where the variable equals one of the values on the right.
+
+```{r, warning=FALSE}
+# A shorter way to select flights that departed in January or February
+flights |>
+  filter(month %in% c(1, 2))
+```
+
+### 6.1.2 `arrange()`
+
+`arrange()` changes the order of the rows based on the value of the columns. It takes a data frame and a set of column names (or more complicated expressions) to order by. If you provide more than one column name, each additional column will be used to break ties in the values of preceding columns. For example, the following code sorts by the departure time, which is spread over four columns. We get the earliest years first, then within a year the earliest months, etc.
+
+```{r, warning=FALSE}
+flights |>
+  arrange(year, month, day, dep_time)
+
+```
+
+You can use `desc()` on a column inside of arrange() to re-order the data frame based on that column in descending (big-to-small) order.
+```{r, warning=FALSE}
+flights |>
+  arrange(desc(dep_delay))
+
+```
+
+### 6.1.3 `distinct()`
+
+`distinct()` finds all the unique rows in a dataset, so in a technical sense, it primarily operates on the rows. Most of the time, however, you’ll want the distinct combination of some variables, so you can also optionally supply column names:
+
+```{r, warning=FALSE}
+# Remove duplicate rows, if any
+flights |>
+  distinct()
+
+# Find all unique origin and destination pairs
+flights |>
+  distinct(origin, dest)
+
+```
+
+Alternatively, if you want to the keep other columns when filtering for unique rows, you can use the `.keep_all = TRUE` option.
+
+```{r, warning=FALSE}
+flights |> 
+  distinct(origin, dest, .keep_all = TRUE)
+
+```
+
+It’s not a coincidence that all of these distinct flights are on January 1: `distinct()` will find the first occurrence of a unique row in the dataset and discard the rest.
+
+If you want to find the number of occurrences instead, you’re better off swapping `distinct()` for `count()`, and with the `sort = TRUE` argument you can arrange them in *descending* order of number of occurrences.
+
+```{r, warning=FALSE}
+flights |>
+  count(origin, dest, sort = TRUE)
+
+```
+## 6.2 Columns
+
+There are four important verbs that affect the columns without changing the rows: `mutate()` creates new columns that are derived from the existing columns, `select()` changes which columns are present, `rename()` changes the names of the columns, and `relocate()` changes the positions of the columns.
+
+### 6.2.1 `mutate()`
+The job of `mutate()` is to add new columns that are calculated from the existing columns. 
+
+```{r, warning=FALSE}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60
+  )
+
+```
+
+By default, `mutate()` adds new columns on the right hand side of your dataset, which makes it difficult to see what’s happening here. We can use the `.before` argument to instead add the variables to the left hand side.
+
+```{r, warning=FALSE}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60,
+    .before = 1
+  )
+
+```
+
+The `.` is a sign that `.before` is an argument to the function, not the name of a third new variable we are creating. You can also use `.after` to add after a variable, and in both `.before` and `.after` you can use the variable name instead of a position.
+
+```{r, warning=FALSE}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = distance / air_time * 60,
+    .after = day
+  )
+
+```
+Alternatively, you can control which variables are kept with the `.keep` argument. A particularly useful argument is `"used"` which specifies that we only keep the columns that were involved or created in the `mutate()` step. For example, the following output will contain only the variables `dep_delay`, `arr_delay`, `air_time`, `gain`, `hours`, and `gain_per_hour`.
+
+```{r, warning=FALSE}
+flights |>
+  mutate(
+    gain = dep_delay - arr_delay,
+    hours = air_time / 60,
+    gain_per_hour = gain / hours,
+    .keep = "used"
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
