@@ -254,8 +254,8 @@ dplyr's verbs are organized into four groups based on what they operate on: *row
 The most important verbs that operate on rows of a dataset are `filter()`, which changes which rows are present without changing their order, and `arrange()`, which changes the order of the rows without changing which are present. `distinct()` which finds rows with unique values but unlike `arrange()` and `filter()` it can also optionally modify the columns.
 
 ### 6.1.1 `filter()`
-`filter()` allows you to keep rows based on the values of the columns. 
-The first argument is the data frame. The second and subsequent arguments are the conditions that must be true to keep the row.
+
+`filter()` allows you to keep rows based on the values of the columns. The first argument is the data frame. The second and subsequent arguments are the conditions that must be true to keep the row.
 
 ```{r, warning=FALSE}
 flights |>
@@ -263,7 +263,8 @@ flights |>
 
 ```
 
-As well as `>` (greater than), you can use `>=` (greater than or equal to), `<` (less than), `<=` (less than or equal to), `==` (equal to), and `!=` (not equal to). You can also combine conditions with` &` or `,` to indicate “and” (check for both conditions) or with `|` to indicate “or” (check for either condition):
+As well as `>` (greater than), you can use `>=` (greater than or equal to), `<` (less than), `<=` (less than or equal to), `==` (equal to), and `!=` (not equal to). You can also combine conditions with`&` or `,` to indicate "and" (check for both conditions) or with `|` to indicate "or" (check for either condition):
+
 ```{r, warning=FALSE}
 # Flights that departed on January 1
 flights |>
@@ -275,7 +276,7 @@ flights |>
 
 ```
 
-There’s a useful shortcut when you’re combining `|` and `==`: `%in%`. It keeps rows where the variable equals one of the values on the right.
+There's a useful shortcut when you're combining `|` and `==`: `%in%`. It keeps rows where the variable equals one of the values on the right.
 
 ```{r, warning=FALSE}
 # A shorter way to select flights that departed in January or February
@@ -294,6 +295,7 @@ flights |>
 ```
 
 You can use `desc()` on a column inside of arrange() to re-order the data frame based on that column in descending (big-to-small) order.
+
 ```{r, warning=FALSE}
 flights |>
   arrange(desc(dep_delay))
@@ -302,7 +304,7 @@ flights |>
 
 ### 6.1.3 `distinct()`
 
-`distinct()` finds all the unique rows in a dataset, so in a technical sense, it primarily operates on the rows. Most of the time, however, you’ll want the distinct combination of some variables, so you can also optionally supply column names:
+`distinct()` finds all the unique rows in a dataset, so in a technical sense, it primarily operates on the rows. Most of the time, however, you'll want the distinct combination of some variables, so you can also optionally supply column names:
 
 ```{r, warning=FALSE}
 # Remove duplicate rows, if any
@@ -323,21 +325,23 @@ flights |>
 
 ```
 
-It’s not a coincidence that all of these distinct flights are on January 1: `distinct()` will find the first occurrence of a unique row in the dataset and discard the rest.
+It's not a coincidence that all of these distinct flights are on January 1: `distinct()` will find the first occurrence of a unique row in the dataset and discard the rest.
 
-If you want to find the number of occurrences instead, you’re better off swapping `distinct()` for `count()`, and with the `sort = TRUE` argument you can arrange them in *descending* order of number of occurrences.
+If you want to find the number of occurrences instead, you're better off swapping `distinct()` for `count()`, and with the `sort = TRUE` argument you can arrange them in *descending* order of number of occurrences.
 
 ```{r, warning=FALSE}
 flights |>
   count(origin, dest, sort = TRUE)
 
 ```
+
 ## 6.2 Columns
 
 There are four important verbs that affect the columns without changing the rows: `mutate()` creates new columns that are derived from the existing columns, `select()` changes which columns are present, `rename()` changes the names of the columns, and `relocate()` changes the positions of the columns.
 
 ### 6.2.1 `mutate()`
-The job of `mutate()` is to add new columns that are calculated from the existing columns. 
+
+The job of `mutate()` is to add new columns that are calculated from the existing columns.
 
 ```{r, warning=FALSE}
 flights |>
@@ -348,7 +352,7 @@ flights |>
 
 ```
 
-By default, `mutate()` adds new columns on the right hand side of your dataset, which makes it difficult to see what’s happening here. We can use the `.before` argument to instead add the variables to the left hand side.
+By default, `mutate()` adds new columns on the right hand side of your dataset, which makes it difficult to see what's happening here. We can use the `.before` argument to instead add the variables to the left hand side.
 
 ```{r, warning=FALSE}
 flights |>
@@ -371,6 +375,7 @@ flights |>
   )
 
 ```
+
 Alternatively, you can control which variables are kept with the `.keep` argument. A particularly useful argument is `"used"` which specifies that we only keep the columns that were involved or created in the `mutate()` step. For example, the following output will contain only the variables `dep_delay`, `arr_delay`, `air_time`, `gain`, `hours`, and `gain_per_hour`.
 
 ```{r, warning=FALSE}
@@ -384,95 +389,169 @@ flights |>
 
 ```
 
+### 6.2.2 `select()`
 
+It's not uncommon to get datasets with hundreds or even thousands of variables. In this situation, the first challenge is often just focusing on the variables you're interested in. `select()` allows you to rapidly zoom in on a useful subset using operations based on the names of the variables.
 
+```{r, warning=FALSE}
+# Select columns by name:
+flights |>
+  select(year, month, day)
 
+# Select all columns between year and day (inclusive):
+flights |>
+  select(year:day)
 
+# Select all columns except those from year to day (inclusive):
+flights |>
+  select(!year:day)
 
+# Select all columns that are characters
+flights |>
+  select(where(is.character))
 
+```
 
+There are a number of helper functions you can use within `select()`:
 
+-   `starts_with("abc")`: matches names that begin with "abc".
 
+-   `ends_with("xyz")`: matches names that end with "xyz".
 
+-   `contains("ijk")`: matches names that contain "ijk".
 
+-   `num_range("x", 1:3)`: matches x1, x2 and x3.
 
+You can rename variables as you `select()` them by using `=`. The new name appears on the left hand side of the `=`, and the old variable appears on the right hand side.
 
+```{r, warning=FALSE}
+flights |>
+  select(tail_num = tailnum)
 
+```
+### 6.2.3 `rename()`
 
+If you want to keep all the existing variables and just want to rename a few, you can use `rename()` instead of `select()`:
 
+```{r, warning=FALSE}
+flights |>
+  rename(tail_num = tailnum)
 
+```
 
+### 6.2.4 `relocate()`
 
+Use `relocate()` to move variables around. You might want to collect related variables together or move important variables to the front. By default `relocate()` moves variables to the front:
+```{r, warning=FALSE}
+flights |>
+  relocate(time_hour, air_time)
+```
 
+You can also specify where to put them using the `.before` and `.after` arguments, just like in `mutate()`:
 
+```{r, warning=FALSE}
+flights |>
+  relocate(year:dep_time, .after = time_hour)
 
+flights |>
+  relocate(starts_with("arr"), .before = dep_time)
 
+```
 
+## 6.3 The Pipe
 
+We’ve shown you simple examples of the pipe above, but its real power arises when you start to combine multiple verbs. For example, imagine that you wanted to find the fastest flights to Houston’s IAH airport: you need to combine `filter()`, `mutate()`, `select()`, and `arrange()`:
 
+```{r}
+flights |>
+  filter(dest =="IAH") |>
+  mutate(speed = distance / air_time * 60) |>
+  select(year:day, dep_time, carrier, flight, speed) |>
+  arrange(desc(speed)) 
+```
 
+## 6.4 Groups
+dplyr gets even more powerful when you add in the ability to work with groups. In this section, we’ll focus on the most important functions: `group_by()`, `summarize()`, and the slice family of functions.
 
+### 6.4.1 `group_by`
 
+Use `group_by()` to divide your dataset into groups meaningful for your analysis:
+```{r}
+flights |>
+  group_by(month)
 
+```
+`group_by()` doesn’t change the data but, if you look closely at the output, you’ll notice that the output indicates that it is “grouped by” month (`Groups: month [12]`). This means subsequent operations will now work “by month”. `group_by()` adds this grouped feature (referred to as class) to the data frame, which changes the behavior of the subsequent verbs applied to the data.
 
+### 6.4.2 `sumarize()`
 
+The most important grouped operation is a summary, which, if being used to calculate a single summary statistic, reduces the data frame to have a single row for each group. In dplyr, this operation is performed by `summarize()`, as shown by the following example, which computes the average departure delay by month.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+flights |>
+  group_by(month) |>
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE)
+  )
+
+```
+You can create any number of summaries in a single call to `summarize()`. One very useful summary is `n()`, which returns the number of rows in each group.
+
+```{r}
+flights |>
+  group_by(month) |>
+  summarize(
+    avg_delay = mean(dep_delay, na.rm = TRUE),
+    n = n()
+  )
+
+```
+### 6.4.3 The `slice_` functions
+
+There are five handy functions that allow you extract specific rows within each group:
+
+-   `df |> slice_head(n = 1)` takes the first row from each group.
+-   `df |> slice_tail(n = 1)` takes the last row in each group.
+-   `df |> slice_min(x, n = 1)` takes the row with the smallest value of column x.
+-   `df |> slice_max(x, n = 1)` takes the row with the largest value of column x.
+-   `df |> slice_sample(n = 1)` takes one random row.
+
+You can vary `n` to select more than one row, or instead of `n =`, you can use `prop = 0.1` to select (e.g.) 10% of the rows in each group. For example, the following code finds the flights that are most delayed upon arrival at each destination:
+
+```{r}
+flights |>
+  group_by(dest) |> 
+  slice_max(arr_delay, n=1) |> 
+  relocate(dest)
+
+```
+Note that there are 105 destinations but we get 108 rows here. What’s up? `slice_min()` and `slice_max()` keep tied values so `n = 1` means give us all rows with the highest value. If you want exactly one row per group you can set `with_ties = FALSE`.
+
+### 6.4.4 Grouping by multiple variables
+You can create groups using more than one variable. For example, we could make a group for each date.
+```{r}
+daily <- flights |> 
+  group_by(year, month, day)
+daily
+
+```
+When you summarize a tibble grouped by more than one variable, each summary peels off the last group. In hindsight, this wasn’t a great way to make this function work, but it’s difficult to change without breaking existing code. To make it obvious what’s happening, dplyr displays a message that tells you how you can change this behavior:
+
+```{r}
+daily_flights <- daily |>
+  summarize(n = n())
+
+```
+If you’re happy with this behavior, you can explicitly request it in order to suppress the message:
+
+```{r}
+daily_flights <- daily |>
+  summarize(
+    n = n(),
+    .groups = "drop_last"
+  )
+
+```
 
 
 
