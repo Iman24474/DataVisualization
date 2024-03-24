@@ -145,3 +145,138 @@ ggplot(le_am_2007, aes(x = lifeExp,
   thm + theme(legend.position = "top")
 
 ```
+
+
+# 2. Visualizing Three or More Numeric Variables
+
+## 2.1. Scatterplot Matrices
+A scatterplot matrix is a useful overview that shows all pairwise scatterplots.
+
+There are many options for creating scatterplot matrices in R; a few are:
+
+-   `pairs` in base graphics;
+
+-   `splom` in package `lattice`
+
+-   `ggpairs` in `GGally`.
+
+Some examples using the `mpg` data:
+
+```{r}
+library(lattice)
+library(ggplot2)
+library(dplyr)
+
+splom(select(mpg, cty, hwy, displ),
+        cex = 0.5, pch = 19)
+
+
+```
+```{r}
+library(GGally)
+
+ggpairs(select(mpg, cty, hwy, displ),
+        lower = list(continuous = 
+                       wrap("points",
+                            size = 1)))
+
+
+```
+### 2.1.1 Three Data Sets
+
+Thee useful data sets to explore:
+
+The `ethanol` data frame in the `lattice` package.
+
+Soil resistivity data from from Cleveland's Visualizing Data book.
+
+The `quakes` data frame in the `datasets` package.
+
+#### 2.1.1.1 Ethanol Data
+
+The `ethanol` data frame in the `lattice` package contains data from an experiment on efficiency and emissions in small one-cylinder engines.
+
+The data frame contains 88 observations on three variables:
+
+`NOx`: Concentration of nitrogen oxides (NO and NO2) in micrograms.
+
+`C` Compression ratio of the engine.
+
+`E` Equivalence ratio, a measure of the richness of the air and ethanol fuel mixture.
+
+```{r}
+library(lattice)
+
+splom(select(ethanol, NOx, C, E),
+      cex = 0.5, pch = 19)
+
+
+```
+A goal is to understand the relationship between the pollutant `NOx` and the controllable variables `E` and `C`.
+
+#### 2.1.1.2 Earth Quake Locations and Magnitudes
+The `quakes` data frame contains data on locations of seismic events of magnitude 4.0 or larger in a region near Fiji.
+
+The time frame is from 1964 to perhaps 2000.
+
+More recent data is available from a number of sources on the web.
+
+A scatter plot matrix:
+
+```{r}
+library(lattice)
+splom(quakes, cex = 0.1, pch = 19)
+
+```
+Quake locations:
+
+Some goals:
+
+-   understand the three-dimensional location of the quakes;
+
+-   see if there is any association between location and magnitude.
+
+```{r, warning=FALSE}
+library(maps)
+library(mapproj)
+
+md <- map_data("world2", c("Fiji", "Tonga", "New Zealand"))
+
+ggplot(quakes, aes(x = long,
+                   y = lat)) +
+  geom_polygon(aes(group = group), data = md, color = "black", fill = NA) +
+  geom_point(size = 0.5, color = "red")+
+  coord_map() +
+  ggthemes::theme_map()
+
+
+```
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
