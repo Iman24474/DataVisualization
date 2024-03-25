@@ -429,6 +429,7 @@ flights |>
   select(tail_num = tailnum)
 
 ```
+
 ### 6.2.3 `rename()`
 
 If you want to keep all the existing variables and just want to rename a few, you can use `rename()` instead of `select()`:
@@ -442,6 +443,7 @@ flights |>
 ### 6.2.4 `relocate()`
 
 Use `relocate()` to move variables around. You might want to collect related variables together or move important variables to the front. By default `relocate()` moves variables to the front:
+
 ```{r, warning=FALSE}
 flights |>
   relocate(time_hour, air_time)
@@ -460,7 +462,7 @@ flights |>
 
 ## 6.3 The Pipe
 
-We’ve shown you simple examples of the pipe above, but its real power arises when you start to combine multiple verbs. For example, imagine that you wanted to find the fastest flights to Houston’s IAH airport: you need to combine `filter()`, `mutate()`, `select()`, and `arrange()`:
+We've shown you simple examples of the pipe above, but its real power arises when you start to combine multiple verbs. For example, imagine that you wanted to find the fastest flights to Houston's IAH airport: you need to combine `filter()`, `mutate()`, `select()`, and `arrange()`:
 
 ```{r}
 flights |>
@@ -471,17 +473,20 @@ flights |>
 ```
 
 ## 6.4 Groups
-dplyr gets even more powerful when you add in the ability to work with groups. In this section, we’ll focus on the most important functions: `group_by()`, `summarize()`, and the slice family of functions.
+
+dplyr gets even more powerful when you add in the ability to work with groups. In this section, we'll focus on the most important functions: `group_by()`, `summarize()`, and the slice family of functions.
 
 ### 6.4.1 `group_by`
 
 Use `group_by()` to divide your dataset into groups meaningful for your analysis:
+
 ```{r}
 flights |>
   group_by(month)
 
 ```
-`group_by()` doesn’t change the data but, if you look closely at the output, you’ll notice that the output indicates that it is “grouped by” month (`Groups: month [12]`). This means subsequent operations will now work “by month”. `group_by()` adds this grouped feature (referred to as class) to the data frame, which changes the behavior of the subsequent verbs applied to the data.
+
+`group_by()` doesn't change the data but, if you look closely at the output, you'll notice that the output indicates that it is "grouped by" month (`Groups: month [12]`). This means subsequent operations will now work "by month". `group_by()` adds this grouped feature (referred to as class) to the data frame, which changes the behavior of the subsequent verbs applied to the data.
 
 ### 6.4.2 `sumarize()`
 
@@ -495,6 +500,7 @@ flights |>
   )
 
 ```
+
 You can create any number of summaries in a single call to `summarize()`. One very useful summary is `n()`, which returns the number of rows in each group.
 
 ```{r}
@@ -506,6 +512,7 @@ flights |>
   )
 
 ```
+
 ### 6.4.3 The `slice_` functions
 
 There are five handy functions that allow you extract specific rows within each group:
@@ -525,24 +532,29 @@ flights |>
   relocate(dest)
 
 ```
-Note that there are 105 destinations but we get 108 rows here. What’s up? `slice_min()` and `slice_max()` keep tied values so `n = 1` means give us all rows with the highest value. If you want exactly one row per group you can set `with_ties = FALSE`.
+
+Note that there are 105 destinations but we get 108 rows here. What's up? `slice_min()` and `slice_max()` keep tied values so `n = 1` means give us all rows with the highest value. If you want exactly one row per group you can set `with_ties = FALSE`.
 
 ### 6.4.4 Grouping by multiple variables
+
 You can create groups using more than one variable. For example, we could make a group for each date.
+
 ```{r}
 daily <- flights |> 
   group_by(year, month, day)
 daily
 
 ```
-When you summarize a tibble grouped by more than one variable, each summary peels off the last group. In hindsight, this wasn’t a great way to make this function work, but it’s difficult to change without breaking existing code. To make it obvious what’s happening, dplyr displays a message that tells you how you can change this behavior:
+
+When you summarize a tibble grouped by more than one variable, each summary peels off the last group. In hindsight, this wasn't a great way to make this function work, but it's difficult to change without breaking existing code. To make it obvious what's happening, dplyr displays a message that tells you how you can change this behavior:
 
 ```{r}
 daily_flights <- daily |>
   summarize(n = n())
 
 ```
-If you’re happy with this behavior, you can explicitly request it in order to suppress the message:
+
+If you're happy with this behavior, you can explicitly request it in order to suppress the message:
 
 ```{r}
 daily_flights <- daily |>
@@ -552,6 +564,213 @@ daily_flights <- daily |>
   )
 
 ```
+
+# 7. Data Tidying
+
+```{r}
+library(tidyverse)
+
+```
+
+There are three interrelated rules that make a dataset tidy:
+
+1.  Each variable is a column; each column is a variable.
+
+2.  Each observation is a row; each row is an observation.
+
+3.  Each value is a cell; each cell is a single value.
+
+## 7.1. Lengthening data
+`tidyr` provides two functions for pivoting data: `pivot_longer()` and `pivot_wider()`. We’ll first start with `pivot_longer()` because it’s the most common case. Let’s dive into some examples.
+
+### 7.1.1. `pivot_longer()`
+The `billboard` dataset records the billboard rank of songs in the year 2000:
+
+```{r}
+billboard
+
+```
+In this dataset, each observation is a song. The first three columns (`artist`, `track` and `date.entered`) are variables that describe the song. Then we have 76 columns (`wk1-wk76`) that describe the rank of the song in each week. Here, the column names are one variable (the `week`) and the cell values are another (the `rank`).
+
+To tidy this data, we’ll use `pivot_longer()`:
+
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank"
+  )
+
+
+```
+
+After the data, there are three key arguments:
+
+-   `cols` specifies which columns need to be pivoted, i.e. which columns aren’t variables. This argument uses the same syntax as `select()` so here we could use `!c(artist, track, date.entered)` or `starts_with("wk")`.
+-   `names_to` names the variable stored in the column names, we named that variable `week`.
+-   `values_to` names the variable stored in the cell values, we named that variable `rank`.
+
+Note that in the code `"week"` and `"rank"` are quoted because those are new variables we’re creating, they don’t yet exist in the data when we run the `pivot_longer()` call.
+
+Now let’s turn our attention to the resulting, longer data frame. What happens if a song is in the top 100 for less than 76 weeks? Take 2 Pac’s “Baby Don’t Cry”, for example. The above output suggests that it was only in the top 100 for 7 weeks, and all the remaining weeks are filled in with missing values. These NAs don’t really represent unknown observations; they were forced to exist by the structure of the dataset2, so we can ask `pivot_longer()` to get rid of them by setting `values_drop_na = TRUE`:
+
+```{r}
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+
+
+```
+
+This data is now tidy, but we could make future computation a bit easier by converting values of week from character strings to numbers using `mutate()` and `readr::parse_number()`.
+
+`parse_number()` is a handy function that will extract the first number from a string, ignoring all other text.
+
+```{r}
+billboard_longer <- billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |> 
+  mutate(
+    week = parse_number(week)
+  )
+
+billboard_longer
+
+
+```
+
+Now that we have all the week numbers in one variable and all the rank values in another, we’re in a good position to visualize how song ranks vary over time.
+
+```{r}
+
+billboard_longer |> 
+  ggplot(aes(x = week,
+             y = rank,
+             group(track))) +
+  geom_line(alpha = 0.25) +
+  scale_y_reverse()
+  
+
+
+```
+#### 7.1.1.1. Many variables in column names
+A more challenging situation occurs when you have multiple pieces of information crammed into the column names, and you would like to store these in separate new variables. For example, take the `who2` dataset, the source of `table1` and friends that you saw above:
+
+```{r}
+who2
+
+```
+
+This dataset, collected by the World Health Organisation, records information about tuberculosis diagnoses. There are two columns that are already variables and are easy to interpret: `country` and `year.` They are followed by 56 columns like `sp_m_014`, `ep_m_4554`, and `rel_m_3544`. If you stare at these columns for long enough, you’ll notice there’s a pattern. Each column name is made up of three pieces separated by `_`. The first piece, `sp/rel/ep`, describes the method used for the diagnosis, the second piece, `m/f` is the gender (coded as a binary variable in this dataset), and the third piece, `014/1524/2534/3544/4554/5564/65` is the age range (014 represents `0-14`, for example).
+
+So in this case we have six pieces of information recorded in `who2`: the `country` and the `year` (already columns); the method of diagnosis, the gender category, and the age range category (contained in the other column names); and the count of patients in that category (cell values). To organize these six pieces of information in six separate columns, we use `pivot_longer()` with a vector of column names for `names_to` and instructors for splitting the original variable names into pieces for `names_sep` as well as a column name for `values_to`:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
