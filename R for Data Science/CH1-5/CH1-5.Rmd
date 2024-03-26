@@ -674,6 +674,202 @@ This dataset, collected by the World Health Organisation, records information ab
 
 So in this case we have six pieces of information recorded in `who2`: the `country` and the `year` (already columns); the method of diagnosis, the gender category, and the age range category (contained in the other column names); and the count of patients in that category (cell values). To organize these six pieces of information in six separate columns, we use `pivot_longer()` with a vector of column names for `names_to` and instructors for splitting the original variable names into pieces for `names_sep` as well as a column name for `values_to`:
 
+```{r}
+who2 |> 
+  pivot_longer(
+    cols = !(country:year),
+    names_to = c("diagnosis", "gender", "age"),
+    names_sep = "_",
+    values_to = "count"
+    
+  )
+
+
+```
+An alternative to `names_sep` is `names_pattern`, which you can use to extract variables from more complicated naming scenarios.
+
+
+This dataset contains data about five families, with the names and dates of birth of up to two children. The new challenge in this dataset is that the column names contain the names of two variables (`dob`, `name`) and the values of another (child, with values 1 or 2). To solve this problem we again need to supply a vector to names_to but this time we use the special "`.value`" sentinel; this isn’t the name of a variable but a unique value that tells `pivot_longer()` to do something different. This overrides the usual `values_to` argument to use the first component of the pivoted column name as a variable name in the output.
+
+```{r}
+household 
+
+```
+```{r}
+household |> 
+  pivot_longer(
+    cols = !family,
+    names_to = c(".value", "child"),
+    names_sep = "_",
+    values_drop_na = TRUE
+  )
+
+
+```
+When you use "`.value`" in names_to, the column names in the input contribute to both values and variable names in the output.
+
+## 7.2. Data Widening
+
+### 7.2.1 `pivot_wider()`
+`pivot_wider()`, which makes datasets wider by increasing columns and reducing rows and helps when one observation is spread across multiple rows. 
+
+We’ll start by looking at `cms_patient_experience`, a dataset from the Centers of Medicare and Medicaid services that collects data about patient experiences:
+
+```{r}
+cms_patient_experience
+
+```
+
+The core unit being studied is an organization, but each organization is spread across six rows, with one row for each measurement taken in the survey organization. We can see the complete set of values for `measure_cd` and `measure_title` by using `distinct()`:
+
+```{r}
+cms_patient_experience |> 
+  distinct(measure_cd, measure_title)
+
+```
+
+`pivot_wider()` has the opposite interface to `pivot_longer()`: instead of choosing new column names, we need to provide the existing columns that define the values (`values_from`) and the column name (`names_from`):
+
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+
+```
+
+The output doesn’t look quite right; we still seem to have multiple rows for each organization. That’s because, we also need to tell `pivot_wider()` which column or columns have values that uniquely identify each row; in this case those are the variables starting with "`org`":
+
+```{r}
+cms_patient_experience |> 
+  pivot_wider(
+    id_cols = starts_with("org"),
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+
+
+```
+# 8. Reading data from a file
+
+## 8.1. `read.csv()`
+We can read this file into R using `read_csv()`.
+
+```{r}
+students <- read.csv("https://pos.it/r4ds-students-csv")
+students
+```
+
+Once you read data in, the first step usually involves transforming it in some way to make it easier to work with in the rest of your analysis.
+
+### 8.1.1. `read.csv(file, na = "")`
+
+In the `favourite.food` column, there are a bunch of food items, and then the character string `N/A`, which should have been a real `NA` that R will recognize as “not available”. This is something we can address using the `na` argument. By default, `read_csv()` only recognizes empty strings (`""`) in this dataset as `NA`s, we want it to also recognize the character string `"N/A"`.
+
+```{r}
+students <- read.csv("https://pos.it/r4ds-students-csv", na = c("N/A", ""))
+students
+
+```
+
+### 8.1.2. `factor()`
+Another common task after reading in data is to consider variable types. For example, `meal_plan` is a categorical variable with a known set of possible values, which in R should be represented as a factor:
+
+```{r}
+students |> 
+  mutate(
+    mealPlan = factor(mealPlan)
+  )
+
+```
+
+Before you analyze these data, you’ll probably want to fix the `age` and `id` columns. Currently, `age` is a character variable because one of the observations is typed out as five instead of a numeric 5.
+
+```{r}
+students <- students |> 
+  mutate(
+    mealPlan = factor(mealPlan),
+    AGE = parse_number(ifelse(AGE == "five", 5, AGE))
+  )
+
+students
+
+
+```
+A new function here is `if_else()`, which has three arguments. The first argument test should be a logical vector. The result will contain the value of the second argument, `yes`, when `test` is `TRUE`, and the value of the third argument, `no`, when it is `FALSE.` Here we’re saying if age is the character string "five", make it "5", and if not leave it as age.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
